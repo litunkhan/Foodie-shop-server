@@ -26,6 +26,7 @@ async function run() {
     await client.connect();
 
     const allUserCollection = client.db('fodieshop').collection('allusers')
+    const menuColloction = client.db('fodieshop').collection('menus')
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -33,6 +34,16 @@ async function run() {
     app.get('/',(req,res)=>{
         res.send('app')
     })
+    app.post('/menu', async(req,res)=>{
+      const newitem = req.body
+      const result = await menuColloction.insertOne(newitem)
+      res.send(result)
+  })
+
+  app.get('/menu', async(req,res)=>{
+    const result = await menuCollection.find().toArray()
+    res.send(result)
+})
 
     app.post('/user', async(req,res)=>{
         const user = req.body
@@ -42,6 +53,11 @@ async function run() {
           return res.send('userAlredy exits')
         }
         const result = await allUserCollection.insertOne(user)
+        res.send(result)
+     })
+
+     app.get('/alluser',async(req,res)=>{
+        const result = await allUserCollection.find().toArray()
         res.send(result)
      })
 
