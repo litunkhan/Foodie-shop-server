@@ -192,6 +192,19 @@ app.post('/payments', verifyJwt,async(req,res)=>{
      res.send(result)
  })
 
+
+
+  // Admin stats
+
+  app.get('/admin-stats', verifyJwt,async(req,res)=>{
+     const users = await allUserCollection.estimatedDocumentCount()
+     const products = await menuColloction.estimatedDocumentCount()
+     const orders = await paymentsCollection.estimatedDocumentCount()
+     const payments = await paymentsCollection.find().toArray()
+     const revenue = payments.reduce((sum,itemPrice)=>sum+itemPrice.price,0)
+     res.send({users,products,orders,revenue })
+  })
+
    
     app.listen(port,()=>{
         console.log('app is running')
