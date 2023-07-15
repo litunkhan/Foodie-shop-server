@@ -37,15 +37,25 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 10,
 });
 
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
+    client.connect((error) => {
+      if (error) {
+        console.error(error);
+        return;
+      }
+    });
 
     const allUserCollection = client.db('fodieshop').collection('allusers')
+    const allUserReviews = client.db('fodieshop').collection('reviews')
     const menuColloction = client.db('fodieshop').collection('menus')
     const allOrderCollection = client.db('fodieshop').collection('orders') 
     const paymentsCollection = client.db('fodieshop').collection('allpayments') 
@@ -165,6 +175,26 @@ app.post('/payments', verifyJwt,async(req,res)=>{
 })
 
 
+// getting payment datas
+
+app.get('/all-payments',verifyJwt,async(req,res)=>{
+  const email = req.query.email
+  if(!email){
+    res.send([])
+  }
+   const decodedEmail = req.decoded.email
+   if(email !== decodedEmail){
+     return res.status(403).send({error:true,message:'forbidden access'})
+   }
+   
+  const quierys = {email:email}
+  const result = await paymentsCollection.find(quierys).toArray()
+  console.log(result)
+  res.send(result)
+})
+
+
+
 // admin know 
   app.patch('/user/admin/:id',async(req,res)=>{
     const id = req.params.id
@@ -193,8 +223,37 @@ app.post('/payments', verifyJwt,async(req,res)=>{
  })
 
 
+//  getting menuitem-data by-using date
 
-  // Admin stats
+app.get('/new-items', async (req, res) => {
+  try {
+    const result = await menuColloction.find({})
+      .sort({ date: -1 }).limit(5)
+      .toArray();
+
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error retrieving data from MongoDB');
+  }
+});
+
+
+// users reviews 
+app.post('/reviews' ,verifyJwt, async(req,res)=>{
+   const reviews = req.body
+   const result = await allUserReviews.insertOne(reviews)
+   res.send(result)
+})
+
+app.get('/get-reviews',async(req,res)=>{
+   const result = await allUserReviews.find().toArray()
+   res.send(result)
+})
+
+
+
+// Admin stats
 
   app.get('/admin-stats', verifyJwt,async(req,res)=>{
      const users = await allUserCollection.estimatedDocumentCount()
